@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Your Excel Data</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- jQuery Library -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- ElevateZoom Library -->
+    <script src="https://cdn.jsdelivr.net/npm/elevatezoom-plus@1.1.21/jquery.ez-plus.min.js"></script>
+
+</head>
+
+<body>
+    <div class="container">
+        <h2>Edit Your Excel Data</h2>
+        <div class="row">
+            <div class="column">
+                <table id="data-table">
+                    <!-- Data will be dynamically loaded here -->
+                </table>
+                <div class="row-navigation">
+                    <button id="prev-row" class="btn btn-secondary">Previous Row</button>
+                    <span id="row-indicator">Row 1 of {{ row_count }}</span>
+                    <button id="next-row" class="btn btn-secondary">Next Row</button>
+                </div>
+            </div>
+            <div class="column">
+                <div id="external-content" class="external-content">
+                    <p>No content available</p>
+                </div>
+                <div class="image-navigation">
+                    <button id="prev-image" class="btn btn-secondary">Previous Image</button>
+                    <button id="next-image" class="btn btn-secondary">Next Image</button>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <button id="save-changes" class="btn btn-success">Save Changes</button>
+            <a href="#" id="download-excel" class="btn btn-primary">Download as Excel</a>
+            <a href="#" id="download-csv" class="btn btn-primary">Download as CSV</a>
+            <button id="download-changes" class="btn btn-secondary">Download Change Log</button>
+        </div>
+    </div>
+
+    <script>
+        // Safely pass Python variables to JavaScript using templating syntax
+        window.totalRows = JSON.parse('{{ row_count | tojson | safe }}');
+        window.data = JSON.parse('{{ data | tojson | safe }}');
+        window.columnOrder = JSON.parse('{{ column_order | tojson | safe }}');
+        console.log(window.totalRows);  // Debugging: Check the row count
+        console.log(window.data);       // Debugging: Check the data being passed
+        console.log(window.columnOrder); // Debugging: Check the column order
+        
+        $(document).ready(function () {
+            let currentRow = 0;
+            let currentImageIndex = 0;
+
+            function loadRow(rowIndex) {
+                if (rowIndex < 0 || rowIndex >= window.totalRows) return;
+                currentRow = rowIndex;
+                currentImageIndex = 0;
+                const rowData = window.data[rowIndex];
+
+                // Populate data table with editable cells
+                const table = $('#data-table');
+                table.empty();
+                Object.keys(rowData).forEach(key => {
+                    const value = rowData[key] || 'N/A';
+                    const row = `<tr>
+                        <th>${key}</th>
+                        <td contenteditable="true" data-key="${key}">${value}</td>
+                    </tr>`;
+                    table.append(row);
+                });
+
+                $('#row-indicator').text(`Row ${currentRow + 1} of ${window.totalRows}`);
+                loadImage(0);
+            }
+
+            function loadImage(imageIndex) {
+                const rowData = window.data[currentRow];
+                const imageUrls = rowData['external_image_url'].split(',').map(url => url.trim());
+                if (imageIndex < 0 || imageIndex >= imageUrls.length) return;
+                currentImageIndex = imageIndex;
+
+                const url = imageUrls[imageIndex];
+
+                if (url.match(/\.(jpeg|jpg|gif|png)$/i)) {
+                    const imgElement = `<img id="zoom-image" src="${url}" alt="Image" class="content-display" style="position: relative; max-width: 100%;">`;
+                    $('#external-content').html(imgElement);
+
+                    setTimeout(function() {
+                        try {
+                            $("#zoom-image").ezPlus({
+                                zoomType: "window",
+                                zoomWindowWidth: 300,
+                                zoomWindowHeight: 300,
+                                borderSize: 1,
+                                zoomWindowFadeIn: 500,
+                                zoomWindowFadeOut: 750,
+                                lensShape: "round",
+                                lensSize: 200
+                            });
+                        } catch (error) {
+                            console.error("Error initializing zoom:", error);
+                        }
+                    }, 100);
+                } else {
+                    $('#external-content').html('<p>No valid image available</p>');
+                }
+            }
+
+            function saveChanges() {
+                const updatedData = {};
+                $('#data-table td').each(function () {
+                    const key = $(this).data('key');
+                    const value = $(this).text();
+                    updatedData[key] = value;
+                });
+
+                window.data[currentRow] = updatedData;
+                alert("Changes saved locally.");
+            }
+
+            function exportFile(type) {
+                $.ajax({
+                    url: '/export',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        data: window.data,
+                        type: type // Specify the export type (excel or csv)
+                    }),
+                    success: function (response) {
+                        const blob = new Blob([response], { type: "application/octet-stream" });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `exported_file.${type === 'excel' ? 'xlsx' : 'csv'}`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    },
+                    error: function (error) {
+                        alert("Failed to export the file. Please try again.");
+                    }
+                });
+            }
+
+            $('#prev-row').click(function () {
+                loadRow(currentRow - 1);
+            });
+
+            $('#next-row').click(function () {
+                loadRow(currentRow + 1);
+            });
+
+            $('#prev-image').click(function () {
+                loadImage(currentImageIndex - 1);
+            });
+
+            $('#next-image').click(function () {
+                loadImage(currentImageIndex + 1);
+            });
+
+            $('#save-changes').click(function () {
+                saveChanges();
+            });
+
+            $('#download-excel').click(function (e) {
+                e.preventDefault();
+                exportFile('excel');
+            });
+
+            $('#download-csv').click(function (e) {
+                e.preventDefault();
+                exportFile('csv');
+            });
+
+            loadRow(0); // Start at row 0 to include the first row
+        });
+    </script>
+</body>
+</html>

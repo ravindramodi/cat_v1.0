@@ -1,0 +1,140 @@
+/* Basic Body and Container Styling */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    height: 100vh;
+}
+
+.container {
+    width: 100%; /* Use full screen width */
+    max-width: none; /* Remove any restrictions on width */
+    height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Layout Flexbox Configuration */
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-grow: 1; /* Allow the row to take up available space */
+}
+
+.column {
+    flex: 1;
+    margin-right: 20px;
+    overflow-y: auto;
+}
+
+.column:last-child {
+    margin-right: 0;
+}
+
+/* Data Table Styling */
+#data-table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+}
+
+#data-table th,
+#data-table td {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+}
+
+#data-table th {
+    background-color: #007bff;
+    color: white;
+    white-space: nowrap;
+}
+
+/* Navigation Buttons Configuration */
+.row-navigation, .image-navigation {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.row-navigation button,
+.image-navigation button,
+.actions button,
+.actions a {
+    margin: 0 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+/* Image Container Configuration */
+.external-content {
+    position: relative;
+    overflow: hidden;
+    height: 80vh; /* Adjust the height dynamically based on screen */
+    width: 100%; /* Use full container width */
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.content-display {
+    transition: transform 0.3s ease;
+    cursor: zoom-in;
+}
+
+.external-content img,
+.external-content iframe {
+    max-width: 100%;
+    max-height: 100%;
+    transition: transform 0.3s ease;
+    cursor: zoom-in;
+}
+
+/* Zoomed Image Handling */
+.content-display {
+    transition: transform 0.3s ease;
+    cursor: zoom-in;
+}
+
+/* Actions (Save and Download Buttons) */
+.actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Debug Information Section */
+.debug-info {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+/* Responsive Configuration for Smaller Screens */
+@media (max-width: 768px) {
+    .row {
+        flex-direction: column;
+    }
+
+    .column {
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+
+    .external-content {
+        height: 50vh; /* Adjust for smaller screens */
+    }
+}
+
